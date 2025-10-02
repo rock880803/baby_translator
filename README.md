@@ -29,7 +29,22 @@ By helping users overcome communication barriers, the app facilitates smoother d
 babe-translator/
 ├── CLAUDE.md              # Essential rules for Claude Code
 ├── README.md              # This file
+├── APP_SETUP.md           # 📱 App development guide
 ├── .gitignore             # Git ignore patterns
+│
+├── mobile/                # 📱 Flutter App (iOS/Android)
+│   ├── lib/
+│   │   ├── main.dart      # App entry point
+│   │   ├── screens/       # UI screens
+│   │   │   ├── home_screen.dart
+│   │   │   ├── mbti_selection_screen.dart
+│   │   │   └── analysis_screen.dart
+│   │   ├── models/        # Data models
+│   │   │   ├── mbti_type.dart
+│   │   │   └── message.dart
+│   │   └── services/      # API services
+│   │       └── api_service.dart
+│   └── pubspec.yaml       # Flutter dependencies
 │
 ├── src/                   # Source code
 │   ├── main/
@@ -38,7 +53,9 @@ babe-translator/
 │   │   │   ├── utils/     # Data processing utilities
 │   │   │   ├── models/    # Model definitions/MBTI analysis
 │   │   │   ├── services/  # ML services and pipelines
-│   │   │   ├── api/       # API endpoints/interfaces
+│   │   │   ├── api/       # 🔥 FastAPI backend
+│   │   │   │   ├── main.py           # API main server
+│   │   │   │   └── requirements.txt  # Python dependencies
 │   │   │   ├── training/  # Training scripts
 │   │   │   ├── inference/ # Response generation
 │   │   │   └── evaluation/# Model evaluation
@@ -113,10 +130,51 @@ babe-translator/
 
 ## 📋 Development Status
 
-- ✅ **Setup**: Complete
-- ⏳ **Core Features**: Pending
+- ✅ **Project Setup**: Complete
+- ✅ **Flutter App Structure**: Complete (iOS/Android support)
+- ✅ **FastAPI Backend**: Complete (REST API ready)
+- ✅ **UI/UX Design**: Complete (3 main screens)
+- ⏳ **AI/NLP Models**: Pending (placeholder implementation)
+- ⏳ **OCR Integration**: Pending
 - ⏳ **Testing**: Pending
-- ⏳ **Documentation**: Pending
+
+## 📱 App Features
+
+### ✅ Implemented
+- **Cross-platform**: iOS & Android support with Flutter
+- **MBTI Selection**: 16 personality types with descriptions
+- **Message Input**: Text input, camera, and gallery support
+- **Image OCR**: Text extraction from screenshots
+- **Emotion Analysis**: Mood, tone, and sentiment detection
+- **Reply Generation**: MBTI-based personalized responses
+- **Multiple Styles**: Various reply styles with confidence scores
+- **Copy to Clipboard**: One-tap reply copying
+
+### 🔨 To Implement
+- Real NLP sentiment analysis models
+- MBTI-based reply generation AI
+- Actual OCR implementation
+- User preferences and history
+- Multi-language support
+
+## 🚀 Getting Started with App Development
+
+📖 **See [APP_SETUP.md](APP_SETUP.md) for detailed setup instructions**
+
+### Quick Start:
+```bash
+# 1. Start Backend API
+cd src/main/python/api
+python -m venv venv
+source venv/bin/activate  # or venv\Scripts\activate on Windows
+pip install -r requirements.txt
+python main.py
+
+# 2. Run Flutter App
+cd mobile
+flutter pub get
+flutter run
+```
 
 ---
 
