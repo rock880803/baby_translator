@@ -118,12 +118,6 @@ babe-translator/
 - ⏳ **Testing**: Pending
 - ⏳ **Documentation**: Pending
 
-## 🔗 Resources
-
-- **CLAUDE.md**: Development rules and guidelines
-- **Template by**: Chang Ho Chien | HC AI 說人話channel | v1.0.0
-- **Tutorial**: https://youtu.be/8Q1bRZaHH24
-
 ---
 
 **🤖 Built with Claude Code - AI-powered development assistant**
