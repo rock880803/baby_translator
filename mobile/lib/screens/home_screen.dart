@@ -33,7 +33,17 @@ class _HomeScreenState extends State<HomeScreen> {
       setState(() => _isLoading = true);
 
       final apiService = context.read<ApiService>();
-      final extractedText = await apiService.extractTextFromImage(image.path);
+      // 先嘗試新端點：上傳並儲存對話，帶上 user_id
+      String extractedText = '';
+      try {
+        extractedText = await apiService.uploadScreenshot(
+          userId: ApiService.defaultUserId,
+          imagePath: image.path,
+        );
+      } catch (_) {
+        // fallback 舊的單純擷取端點
+        extractedText = await apiService.extractTextFromImage(image.path);
+      }
 
       setState(() {
         _messageController.text = extractedText;
@@ -82,17 +92,89 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  void _showApiSettingsDialog() {
+    final apiService = context.read<ApiService>();
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('API 設定'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              '後端 API 位址',
+              style: Theme.of(context).textTheme.titleSmall,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              ApiService.baseUrl,
+              style: const TextStyle(
+                fontFamily: 'monospace',
+                fontSize: 12,
+              ),
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              '提示：\n• Android 模擬器使用 10.0.2.2:8000\n• iOS 模擬器使用 localhost:8000\n• 實體裝置使用電腦的 IP 位址',
+              style: TextStyle(fontSize: 12, color: Colors.grey),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('關閉'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Babe Translator'),
+        title: Row(
+          children: [
+            const Text('💕 Babe Translator'),
+          ],
+        ),
         actions: [
+          // MBTI 設定按鈕
+          IconButton(
+            icon: const Icon(Icons.psychology),
+            tooltip: 'MBTI 設定',
+            onPressed: () async {
+              final result = await Navigator.push<MBTIType>(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const MBTISelectionScreen(),
+                ),
+              );
+              if (result != null) {
+                setState(() => _selectedMBTI = result);
+              }
+            },
+          ),
+          // 顯示當前 MBTI
           if (_selectedMBTI != null)
-            Chip(
-              label: Text(_selectedMBTI!.name),
-              onDeleted: () => setState(() => _selectedMBTI = null),
+            Padding(
+              padding: const EdgeInsets.only(right: 8.0),
+              child: Center(
+                child: Chip(
+                  label: Text(_selectedMBTI!.name),
+                  onDeleted: () => setState(() => _selectedMBTI = null),
+                  deleteIconColor: Theme.of(context).colorScheme.error,
+                ),
+              ),
             ),
+          // API 串接按鈕
+          IconButton(
+            icon: const Icon(Icons.api),
+            tooltip: 'API 串接',
+            onPressed: _showApiSettingsDialog,
+          ),
           const SizedBox(width: 8),
         ],
       ),
@@ -142,28 +224,6 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ],
                 ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            Card(
-              child: ListTile(
-                leading: const Icon(Icons.psychology),
-                title: const Text('您的 MBTI 人格類型'),
-                subtitle: Text(
-                  _selectedMBTI?.description ?? '尚未選擇',
-                ),
-                trailing: const Icon(Icons.chevron_right),
-                onTap: () async {
-                  final result = await Navigator.push<MBTIType>(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const MBTISelectionScreen(),
-                    ),
-                  );
-                  if (result != null) {
-                    setState(() => _selectedMBTI = result);
-                  }
-                },
               ),
             ),
             const Spacer(),
