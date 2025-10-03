@@ -1,12 +1,13 @@
-# CLAUDE.md - Babe Translator
+# CLAUDE.md
 
-> **Documentation Version**: 1.0
-> **Last Updated**: 2025-10-02
-> **Project**: Babe Translator
-> **Description**: This project utilizes Natural Language Processing (NLP) and Artificial Intelligence (AI) to analyze messages received from a partner, whether through screenshots or text. Based on the user's selected MBTI personality type, it intelligently generates a variety of suggested replies in different styles that are tailored to the user's personality.
-> **Features**: GitHub auto-backup, Task agents, technical debt prevention
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-This file provides essential guidance to Claude Code (claude.ai/code) when working with code in this repository.
+## Project Overview
+
+**Babe Translator** is an AI-powered relationship communication assistant that analyzes partner messages and generates MBTI personality-based reply suggestions.
+
+**Architecture**: Flutter mobile app (iOS/Android) + FastAPI Python backend
+**Status**: UI complete, AI/NLP models pending implementation
 
 ## 🚨 CRITICAL RULES - READ FIRST
 
@@ -105,47 +106,77 @@ git push origin main
 gh repo view
 ```
 
-## 🏗️ PROJECT OVERVIEW
+## 🏗️ Project Structure
 
-### AI/ML Project Structure
 ```
 babe-translator/
-├── src/main/python/       # Main application code
-│   ├── core/              # Core NLP/AI algorithms
-│   ├── utils/             # Data processing utilities
-│   ├── models/            # Model definitions/architectures
-│   ├── services/          # ML services and pipelines
-│   ├── api/               # API endpoints/interfaces
-│   ├── training/          # Training scripts and pipelines
-│   ├── inference/         # Inference and prediction code
-│   └── evaluation/        # Model evaluation and metrics
-├── src/main/resources/    # Configuration and data
-├── src/test/              # Test files
-├── data/                  # Dataset management
-├── notebooks/             # Jupyter notebooks
-├── models/                # Trained models and artifacts
-├── experiments/           # Experiment tracking
-└── output/                # Generated output files
+├── mobile/                        # Flutter Mobile App
+│   ├── lib/
+│   │   ├── main.dart              # App entry point with Provider setup
+│   │   ├── screens/               # UI screens
+│   │   │   ├── home_screen.dart           # Message input & MBTI selection
+│   │   │   ├── mbti_selection_screen.dart # 16 MBTI types selector
+│   │   │   └── analysis_screen.dart       # Results & reply suggestions
+│   │   ├── models/                # Data models
+│   │   │   ├── mbti_type.dart     # MBTI enum & descriptions
+│   │   │   └── message.dart       # AnalysisResult & GeneratedReply
+│   │   └── services/
+│   │       └── api_service.dart   # HTTP client for backend API
+│   └── pubspec.yaml               # Dependencies: provider, http, image_picker
+│
+└── src/main/python/api/           # FastAPI Backend
+    ├── main.py                    # API endpoints (analyze, generate-replies, extract-text)
+    └── requirements.txt           # Dependencies: fastapi, transformers, pytesseract
 ```
 
-### 🎯 **DEVELOPMENT STATUS**
-- **Setup**: ✅ Complete
-- **Core Features**: Pending
-- **Testing**: Pending
-- **Documentation**: Pending
+## 🚀 Common Commands
 
-### Key Project Features
-1. **Understanding the Emotion Behind the Message**: Analyzes mood, tone, and underlying needs in partner's messages
-2. **Personalized Reply Styles**: MBTI-based responses that feel genuine and natural
-3. **Improving Relationship Communication**: Helps overcome communication barriers and strengthen connections
+### Backend Development
+```bash
+# Start FastAPI server (from src/main/python/api/)
+python main.py
+# Server runs on http://localhost:8000
+# API docs: http://localhost:8000/docs
 
-## 📋 NEED HELP? START HERE
+# Setup virtual environment first
+python -m venv venv
+venv\Scripts\activate          # Windows
+source venv/bin/activate       # macOS/Linux
+pip install -r requirements.txt
+```
 
-### Project-Specific Resources
-- NLP/AI implementation: `src/main/python/core/`
-- MBTI personality analysis: `src/main/python/models/`
-- Message analysis pipeline: `src/main/python/services/`
-- Response generation: `src/main/python/inference/`
+### Flutter Development
+```bash
+# Run app (from mobile/)
+flutter run                    # Auto-detect device
+flutter run -d ios            # iOS simulator
+flutter run -d android        # Android emulator
+flutter run -d chrome         # Web browser
+
+# Development tools
+flutter pub get               # Install dependencies
+flutter doctor                # Check setup
+flutter devices               # List available devices
+flutter clean                 # Clean build cache
+
+# Build for production
+flutter build apk --release   # Android APK
+flutter build ios --release   # iOS (requires Apple Developer account)
+```
+
+## 🔌 API Architecture
+
+The FastAPI backend ([src/main/python/api/main.py](src/main/python/api/main.py)) exposes three endpoints:
+
+1. **POST /api/analyze** - Analyze message emotion/tone/mood
+2. **POST /api/generate-replies** - Generate MBTI-based reply suggestions
+3. **POST /api/extract-text** - OCR text extraction from images
+
+**Current Status**: Placeholder implementations returning mock data. Real NLP/AI models need implementation.
+
+**Flutter API Client**: [mobile/lib/services/api_service.dart](mobile/lib/services/api_service.dart)
+- Uses `http` package for REST calls
+- `baseUrl`: `http://localhost:8000/api` (change to `10.0.2.2:8000` for Android emulator)
 
 ## 🎯 RULE COMPLIANCE CHECK
 
@@ -157,59 +188,43 @@ Before starting ANY task, verify:
 - [ ] Commit after each completed task
 - [ ] Push to GitHub after each commit
 
-## 🚀 COMMON COMMANDS
+## 🧠 AI/ML Implementation Guide
 
-```bash
-# Development
-python src/main/python/main.py
+The backend currently has **placeholder implementations** in [main.py:69-136](src/main/python/api/main.py#L69-L136). To implement real AI:
 
-# Testing
-pytest src/test/
-
-# Training
-python src/main/python/training/train_model.py
-
-# Inference
-python src/main/python/inference/generate_reply.py
-
-# Jupyter notebooks
-jupyter notebook notebooks/
+### Sentiment Analysis (`/api/analyze`)
+```python
+# TODO: Replace placeholder at main.py:76-82
+# Use transformers library (already in requirements.txt)
+from transformers import pipeline
+sentiment_analyzer = pipeline("sentiment-analysis", model="nlptown/bert-base-multilingual-uncased-sentiment")
 ```
 
-## 🚨 TECHNICAL DEBT PREVENTION
-
-### ❌ WRONG APPROACH (Creates Technical Debt):
-```bash
-# Creating new file without searching first
-Write(file_path="new_feature.py", content="...")
+### Reply Generation (`/api/generate-replies`)
+```python
+# TODO: Replace placeholder at main.py:93-119
+# Use GPT-style models for MBTI-aligned responses
+# Consider: OpenAI API, Hugging Face Transformers, or local LLaMA
 ```
 
-### ✅ CORRECT APPROACH (Prevents Technical Debt):
-```bash
-# 1. SEARCH FIRST
-Grep(pattern="feature.*implementation", glob="*.py")
-# 2. READ EXISTING FILES
-Read(file_path="existing_feature.py")
-# 3. EXTEND EXISTING FUNCTIONALITY
-Edit(file_path="existing_feature.py", old_string="...", new_string="...")
+### OCR (`/api/extract-text`)
+```python
+# TODO: Replace placeholder at main.py:134-135
+# pytesseract already in requirements.txt
+import pytesseract
+from PIL import Image
+text = pytesseract.image_to_string(Image.open(image_path), lang='chi_tra+eng')
 ```
 
-## 🧹 DEBT PREVENTION WORKFLOW
+## 🚨 Technical Debt Prevention
 
-### Before Creating ANY New File:
-1. **🔍 Search First** - Use Grep/Glob to find existing implementations
-2. **📋 Analyze Existing** - Read and understand current patterns
-3. **🤔 Decision Tree**: Can extend existing? → DO IT | Must create new? → Document why
-4. **✅ Follow Patterns** - Use established project patterns
-5. **📈 Validate** - Ensure no duplication or technical debt
+### Key Principles
+- **NEVER** create files in root directory - use `mobile/` or `src/main/python/api/`
+- **SEARCH FIRST** before creating new files - extend existing code when possible
+- **SINGLE SOURCE OF TRUTH** - avoid duplicate implementations
 
----
-
-**⚠️ Prevention is better than consolidation - build clean from the start.**
-**🎯 Focus on single source of truth and extending existing functionality.**
-**📈 Each task should maintain clean architecture and prevent technical debt.**
-
----
-
-**Template by Chang Ho Chien | HC AI 說人話channel | v1.0.0**
-📺 Tutorial: https://youtu.be/8Q1bRZaHH24
+### Before Creating New Files
+1. Search for existing implementations: `Grep(pattern="<functionality>", glob="*.{py,dart}")`
+2. Read and understand existing patterns
+3. Extend existing files when possible - only create new files when necessary
+4. Follow established project structure (Flutter screens in `mobile/lib/screens/`, API logic in `src/main/python/api/`)
