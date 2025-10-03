@@ -280,38 +280,29 @@ class _HomeScreenState extends State<HomeScreen> {
                       children: [
                         Expanded(
                           child: OutlinedButton.icon(
-                            onPressed: () => _pickImage(ImageSource.camera),
-                            icon: const Icon(Icons.camera_alt),
-                            label: const Text('拍照'),
+                            onPressed: () => _pickImage(ImageSource.gallery),
+                            icon: const Icon(Icons.screenshot),
+                            label: const Text('上傳截圖'),
                           ),
                         ),
                         const SizedBox(width: 8),
                         Expanded(
-                          child: OutlinedButton.icon(
-                            onPressed: () => _pickImage(ImageSource.gallery),
-                            icon: const Icon(Icons.photo_library),
-                            label: const Text('相簿'),
+                          child: FilledButton.icon(
+                            onPressed: _isLoading ? null : _analyzeMessage,
+                            icon: _isLoading
+                                ? const SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(strokeWidth: 2),
+                                  )
+                                : const Icon(Icons.auto_awesome),
+                            label: const Text('分析並生成回覆'),
                           ),
                         ),
                       ],
                     ),
                   ],
                 ),
-              ),
-            ),
-            const Spacer(),
-            FilledButton.icon(
-              onPressed: _isLoading ? null : _analyzeMessage,
-              icon: _isLoading
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Icon(Icons.auto_awesome),
-              label: const Text('分析並生成回覆'),
-              style: FilledButton.styleFrom(
-                padding: const EdgeInsets.all(16),
               ),
             ),
           ],
