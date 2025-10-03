@@ -44,16 +44,24 @@ class _HomeScreenState extends State<HomeScreen> {
       setState(() => _isLoading = true);
 
       final apiService = context.read<ApiService>();
+
+      // 讀取圖片 bytes（Web 和移動平台都支援）
+      final imageBytes = await image.readAsBytes();
+
       // 先嘗試新端點：上傳並儲存對話，帶上 user_id
       String extractedText = '';
       try {
         extractedText = await apiService.uploadScreenshot(
           userId: ApiService.defaultUserId,
           imagePath: image.path,
+          imageBytes: imageBytes,
         );
       } catch (_) {
         // fallback 舊的單純擷取端點
-        extractedText = await apiService.extractTextFromImage(image.path);
+        extractedText = await apiService.extractTextFromImage(
+          image.path,
+          imageBytes: imageBytes,
+        );
       }
 
       setState(() {

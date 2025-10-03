@@ -6,6 +6,7 @@ import '../models/mbti_type.dart';
 class ApiService {
   // TODO: Replace with your actual API endpoint
   static const String baseUrl = 'http://localhost:8000/api';
+  static const String defaultUserId = 'demo_user_1';
 
   Future<AnalysisResult> analyzeMessage(String content) async {
     try {
@@ -57,13 +58,24 @@ class ApiService {
     }
   }
 
-  Future<String> extractTextFromImage(String imagePath) async {
+  Future<String> extractTextFromImage(String imagePath, {List<int>? imageBytes}) async {
     try {
       var request = http.MultipartRequest(
         'POST',
         Uri.parse('$baseUrl/extract-text'),
       );
-      request.files.add(await http.MultipartFile.fromPath('image', imagePath));
+
+      if (imageBytes != null) {
+        // Web platform: use bytes
+        request.files.add(http.MultipartFile.fromBytes(
+          'image',
+          imageBytes,
+          filename: 'screenshot.jpg',
+        ));
+      } else {
+        // Mobile platform: use path
+        request.files.add(await http.MultipartFile.fromPath('image', imagePath));
+      }
 
       final response = await request.send();
       final responseData = await response.stream.bytesToString();
@@ -72,6 +84,44 @@ class ApiService {
         return json.decode(responseData)['text'];
       } else {
         throw Exception('Failed to extract text: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Network error: $e');
+    }
+  }
+
+  Future<String> uploadScreenshot({
+    required String userId,
+    required String imagePath,
+    List<int>? imageBytes,
+  }) async {
+    try {
+      var request = http.MultipartRequest(
+        'POST',
+        Uri.parse('$baseUrl/upload-screenshot'),
+      );
+      request.fields['user_id'] = userId;
+
+      if (imageBytes != null) {
+        // Web platform: use bytes
+        request.files.add(http.MultipartFile.fromBytes(
+          'image',
+          imageBytes,
+          filename: 'screenshot.jpg',
+        ));
+      } else {
+        // Mobile platform: use path
+        request.files.add(await http.MultipartFile.fromPath('image', imagePath));
+      }
+
+      final response = await request.send();
+      final responseData = await response.stream.bytesToString();
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> data = json.decode(responseData);
+        return (data['text'] as String?) ?? '';
+      } else {
+        throw Exception('Failed to upload screenshot: ${response.statusCode}');
       }
     } catch (e) {
       throw Exception('Network error: $e');
