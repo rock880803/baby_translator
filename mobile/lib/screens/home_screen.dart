@@ -16,7 +16,8 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final TextEditingController _messageController = TextEditingController();
   final ImagePicker _picker = ImagePicker();
-  MBTIType? _selectedMBTI;
+  MBTIType? _myMBTI;      // 自己的 MBTI
+  MBTIType? _partnerMBTI; // 對方的 MBTI
   bool _isLoading = false;
 
   @override
@@ -67,16 +68,11 @@ class _HomeScreenState extends State<HomeScreen> {
       return;
     }
 
-    if (_selectedMBTI == null) {
-      final result = await Navigator.push<MBTIType>(
-        context,
-        MaterialPageRoute(builder: (_) => const MBTISelectionScreen()),
+    if (_myMBTI == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('請先設定自己的 MBTI 類型')),
       );
-      if (result != null) {
-        setState(() => _selectedMBTI = result);
-      } else {
-        return;
-      }
+      return;
     }
 
     if (!mounted) return;
@@ -86,7 +82,86 @@ class _HomeScreenState extends State<HomeScreen> {
       MaterialPageRoute(
         builder: (_) => AnalysisScreen(
           message: _messageController.text,
-          mbtiType: _selectedMBTI!,
+          mbtiType: _myMBTI!,
+        ),
+      ),
+    );
+  }
+
+  void _showMBTISettingsDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: const Text('MBTI 設定'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // 自己的 MBTI
+              Text(
+                '自己的 MBTI',
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
+              DropdownButtonFormField<MBTIType>(
+                value: _myMBTI,
+                decoration: const InputDecoration(
+                  border: OutlineInputBorder(),
+                  hintText: '選擇您的 MBTI',
+                ),
+                items: MBTIType.values.map((type) {
+                  return DropdownMenuItem(
+                    value: type,
+                    child: Text('${type.name} - ${type.description}'),
+                  );
+                }).toList(),
+                onChanged: (value) {
+                  setDialogState(() => _myMBTI = value);
+                },
+              ),
+              const SizedBox(height: 24),
+              // 對方的 MBTI
+              Text(
+                '對方的 MBTI',
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
+              DropdownButtonFormField<MBTIType>(
+                value: _partnerMBTI,
+                decoration: const InputDecoration(
+                  border: OutlineInputBorder(),
+                  hintText: '選擇對方的 MBTI（選填）',
+                ),
+                items: MBTIType.values.map((type) {
+                  return DropdownMenuItem(
+                    value: type,
+                    child: Text('${type.name} - ${type.description}'),
+                  );
+                }).toList(),
+                onChanged: (value) {
+                  setDialogState(() => _partnerMBTI = value);
+                },
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('取消'),
+            ),
+            FilledButton(
+              onPressed: () {
+                setState(() {}); // 更新主畫面
+                Navigator.pop(context);
+              },
+              child: const Text('確定'),
+            ),
+          ],
         ),
       ),
     );
@@ -135,37 +210,35 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Row(
-          children: [
-            const Text('💕 Babe Translator'),
-          ],
-        ),
+        title: const Text('💕 Babe Translator'),
         actions: [
           // MBTI 設定按鈕
           IconButton(
             icon: const Icon(Icons.psychology),
             tooltip: 'MBTI 設定',
-            onPressed: () async {
-              final result = await Navigator.push<MBTIType>(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => const MBTISelectionScreen(),
-                ),
-              );
-              if (result != null) {
-                setState(() => _selectedMBTI = result);
-              }
-            },
+            onPressed: _showMBTISettingsDialog,
           ),
-          // 顯示當前 MBTI
-          if (_selectedMBTI != null)
+          // 顯示自己的 MBTI
+          if (_myMBTI != null)
+            Padding(
+              padding: const EdgeInsets.only(right: 4.0),
+              child: Center(
+                child: Chip(
+                  avatar: const Icon(Icons.person, size: 16),
+                  label: Text(_myMBTI!.name, style: const TextStyle(fontSize: 12)),
+                  visualDensity: VisualDensity.compact,
+                ),
+              ),
+            ),
+          // 顯示對方的 MBTI
+          if (_partnerMBTI != null)
             Padding(
               padding: const EdgeInsets.only(right: 8.0),
               child: Center(
                 child: Chip(
-                  label: Text(_selectedMBTI!.name),
-                  onDeleted: () => setState(() => _selectedMBTI = null),
-                  deleteIconColor: Theme.of(context).colorScheme.error,
+                  avatar: const Icon(Icons.favorite, size: 16),
+                  label: Text(_partnerMBTI!.name, style: const TextStyle(fontSize: 12)),
+                  visualDensity: VisualDensity.compact,
                 ),
               ),
             ),
