@@ -13,12 +13,22 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
+// 聊天訊息模型
+class ChatMessage {
+  final String text;
+  final bool isMe; // true = 自己, false = 對方
+
+  ChatMessage({required this.text, required this.isMe});
+}
+
 class _HomeScreenState extends State<HomeScreen> {
   final TextEditingController _messageController = TextEditingController();
   final ImagePicker _picker = ImagePicker();
+  final List<ChatMessage> _chatMessages = []; // 聊天記錄
   MBTIType? _myMBTI;      // 自己的 MBTI
   MBTIType? _partnerMBTI; // 對方的 MBTI
   bool _isLoading = false;
+  String? _extractedText; // 截圖擷取的文字
 
   @override
   void dispose() {
@@ -47,9 +57,14 @@ class _HomeScreenState extends State<HomeScreen> {
       }
 
       setState(() {
-        _messageController.text = extractedText;
+        _extractedText = extractedText;
         _isLoading = false;
       });
+
+      // 顯示對話框讓使用者選擇是對方還是自己的訊息
+      if (mounted && extractedText.isNotEmpty) {
+        _showMessageAssignmentDialog(extractedText);
+      }
     } catch (e) {
       setState(() => _isLoading = false);
       if (mounted) {
@@ -58,6 +73,56 @@ class _HomeScreenState extends State<HomeScreen> {
         );
       }
     }
+  }
+
+  void _showMessageAssignmentDialog(String text) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('這是誰的訊息？'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('擷取的文字：'),
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.grey[100],
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                text,
+                style: const TextStyle(fontSize: 14),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          OutlinedButton.icon(
+            onPressed: () {
+              setState(() {
+                _chatMessages.add(ChatMessage(text: text, isMe: false));
+              });
+              Navigator.pop(context);
+            },
+            icon: const Icon(Icons.favorite),
+            label: const Text('對方'),
+          ),
+          FilledButton.icon(
+            onPressed: () {
+              setState(() {
+                _chatMessages.add(ChatMessage(text: text, isMe: true));
+              });
+              Navigator.pop(context);
+            },
+            icon: const Icon(Icons.person),
+            label: const Text('自己'),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _analyzeMessage() async {
@@ -206,6 +271,41 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  // 建立聊天氣泡 Widget
+  Widget _buildChatBubble(ChatMessage message) {
+    final isMe = message.isMe;
+    return Align(
+      alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
+      child: Container(
+        margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        decoration: BoxDecoration(
+          color: isMe
+              ? Theme.of(context).colorScheme.primaryContainer
+              : Colors.grey[200],
+          borderRadius: BorderRadius.only(
+            topLeft: const Radius.circular(16),
+            topRight: const Radius.circular(16),
+            bottomLeft: isMe ? const Radius.circular(16) : const Radius.circular(4),
+            bottomRight: isMe ? const Radius.circular(4) : const Radius.circular(16),
+          ),
+        ),
+        constraints: BoxConstraints(
+          maxWidth: MediaQuery.of(context).size.width * 0.7,
+        ),
+        child: Text(
+          message.text,
+          style: TextStyle(
+            color: isMe
+                ? Theme.of(context).colorScheme.onPrimaryContainer
+                : Colors.black87,
+            fontSize: 15,
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -256,6 +356,63 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            // 聊天室區塊
+            Card(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          '💬 聊天室',
+                          style: Theme.of(context).textTheme.titleLarge,
+                        ),
+                        if (_chatMessages.isNotEmpty)
+                          TextButton.icon(
+                            onPressed: () {
+                              setState(() => _chatMessages.clear());
+                            },
+                            icon: const Icon(Icons.delete_outline, size: 18),
+                            label: const Text('清空'),
+                          ),
+                      ],
+                    ),
+                  ),
+                  Container(
+                    height: 200,
+                    decoration: BoxDecoration(
+                      color: Colors.grey[50],
+                      border: Border(
+                        top: BorderSide(color: Colors.grey[300]!),
+                      ),
+                    ),
+                    child: _chatMessages.isEmpty
+                        ? Center(
+                            child: Text(
+                              '尚無對話\n上傳截圖後選擇「對方」或「自己」來建立對話',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: Colors.grey[600],
+                                fontSize: 14,
+                              ),
+                            ),
+                          )
+                        : ListView.builder(
+                            padding: const EdgeInsets.symmetric(vertical: 8),
+                            itemCount: _chatMessages.length,
+                            itemBuilder: (context, index) {
+                              return _buildChatBubble(_chatMessages[index]);
+                            },
+                          ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            // 訊息輸入區塊
             Card(
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
