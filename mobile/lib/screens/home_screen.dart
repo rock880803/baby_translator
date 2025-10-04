@@ -49,7 +49,7 @@ class _HomeScreenState extends State<HomeScreen> {
       final imageBytes = await image.readAsBytes();
 
       // 呼叫 OCR API 取得對話資料
-      dynamic result;
+      Map<String, dynamic>? result;
       try {
         result = await apiService.extractConversationFromImage(
           image.path,
@@ -68,26 +68,30 @@ class _HomeScreenState extends State<HomeScreen> {
       setState(() => _isLoading = false);
 
       // 解析 API 返回的對話資料
-      if (result != null && result['messages'] != null) {
-        final messages = result['messages'] as List;
+      if (result != null && result.containsKey('messages')) {
+        final messagesData = result['messages'];
 
-        // 自動匯入所有訊息到聊天室
-        setState(() {
-          for (var msg in messages) {
-            _chatMessages.add(ChatMessage(
-              text: msg['text'],
-              isMe: msg['is_me'] ?? false,
-            ));
+        if (messagesData is List) {
+          // 自動匯入所有訊息到聊天室
+          setState(() {
+            for (var msg in messagesData) {
+              if (msg is Map) {
+                _chatMessages.add(ChatMessage(
+                  text: msg['text']?.toString() ?? '',
+                  isMe: msg['is_me'] == true,
+                ));
+              }
+            }
+          });
+
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('已匯入 ${messagesData.length} 則訊息'),
+                backgroundColor: Colors.green,
+              ),
+            );
           }
-        });
-
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('已匯入 ${messages.length} 則訊息'),
-              backgroundColor: Colors.green,
-            ),
-          );
         }
       }
     } catch (e) {

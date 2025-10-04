@@ -90,7 +90,7 @@ class ApiService {
     }
   }
 
-  Future<Map<String, dynamic>> extractConversationFromImage(String imagePath, {List<int>? imageBytes}) async {
+  Future<Map<String, dynamic>?> extractConversationFromImage(String imagePath, {List<int>? imageBytes}) async {
     try {
       var request = http.MultipartRequest(
         'POST',
@@ -113,7 +113,12 @@ class ApiService {
       final responseData = await response.stream.bytesToString();
 
       if (response.statusCode == 200) {
-        return json.decode(responseData) as Map<String, dynamic>;
+        final decoded = json.decode(responseData);
+        if (decoded is Map<String, dynamic>) {
+          return decoded;
+        } else {
+          throw Exception('Unexpected response format');
+        }
       } else {
         throw Exception('Failed to extract conversation: ${response.statusCode}');
       }
