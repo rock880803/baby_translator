@@ -48,30 +48,47 @@ class _HomeScreenState extends State<HomeScreen> {
       // 讀取圖片 bytes（Web 和移動平台都支援）
       final imageBytes = await image.readAsBytes();
 
-      // 先嘗試新端點：上傳並儲存對話，帶上 user_id
-      String extractedText = '';
+      // 呼叫 OCR API 取得對話資料
+      dynamic result;
       try {
-        extractedText = await apiService.uploadScreenshot(
-          userId: ApiService.defaultUserId,
-          imagePath: image.path,
-          imageBytes: imageBytes,
-        );
-      } catch (_) {
-        // fallback 舊的單純擷取端點
-        extractedText = await apiService.extractTextFromImage(
+        result = await apiService.extractConversationFromImage(
           image.path,
           imageBytes: imageBytes,
         );
+      } catch (e) {
+        setState(() => _isLoading = false);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('OCR 解析失敗: $e')),
+          );
+        }
+        return;
       }
 
-      setState(() {
-        _extractedText = extractedText;
-        _isLoading = false;
-      });
+      setState(() => _isLoading = false);
 
-      // 顯示對話框讓使用者選擇是對方還是自己的訊息
-      if (mounted && extractedText.isNotEmpty) {
-        _showMessageAssignmentDialog(extractedText);
+      // 解析 API 返回的對話資料
+      if (result != null && result['messages'] != null) {
+        final messages = result['messages'] as List;
+
+        // 自動匯入所有訊息到聊天室
+        setState(() {
+          for (var msg in messages) {
+            _chatMessages.add(ChatMessage(
+              text: msg['text'],
+              isMe: msg['is_me'] ?? false,
+            ));
+          }
+        });
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('已匯入 ${messages.length} 則訊息'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
       }
     } catch (e) {
       setState(() => _isLoading = false);
@@ -81,56 +98,6 @@ class _HomeScreenState extends State<HomeScreen> {
         );
       }
     }
-  }
-
-  void _showMessageAssignmentDialog(String text) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('這是誰的訊息？'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text('擷取的文字：'),
-            const SizedBox(height: 8),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.grey[100],
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text(
-                text,
-                style: const TextStyle(fontSize: 14),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          OutlinedButton.icon(
-            onPressed: () {
-              setState(() {
-                _chatMessages.add(ChatMessage(text: text, isMe: false));
-              });
-              Navigator.pop(context);
-            },
-            icon: const Icon(Icons.favorite),
-            label: const Text('對方'),
-          ),
-          FilledButton.icon(
-            onPressed: () {
-              setState(() {
-                _chatMessages.add(ChatMessage(text: text, isMe: true));
-              });
-              Navigator.pop(context);
-            },
-            icon: const Icon(Icons.person),
-            label: const Text('自己'),
-          ),
-        ],
-      ),
-    );
   }
 
   Future<void> _analyzeMessage() async {

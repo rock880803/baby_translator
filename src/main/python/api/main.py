@@ -155,29 +155,50 @@ async def generate_replies(request: GenerateRepliesRequest):
 @app.post("/api/extract-text")
 async def extract_text(image: UploadFile = File(...)):
     """
-    Extract text from image using OCR
-    TODO: Implement actual OCR
+    Extract text from image using OCR and detect message sides
+    TODO: Implement actual OCR with position detection
     """
-    # Placeholder implementation
-    # TODO: Replace with actual OCR (e.g., Tesseract, Google Vision API)
+    # Placeholder implementation - 模擬聊天截圖的對話
+    # TODO: Replace with actual OCR (Tesseract + OpenCV for bubble detection)
 
-    # 暫時跳過圖片類型檢查，直接返回模擬資料
     import random
 
-    # 模擬 OCR 擷取的對話範例
-    sample_messages = [
-        "我想你了 ❤️",
-        "今天工作好累，想抱抱你",
-        "你在做什麼呢？想你~",
-        "晚上一起吃飯好嗎？",
-        "謝謝你一直陪著我 💕",
-        "今天心情不太好...可以聊聊嗎？",
-        "看到這個想到你 😊",
-        "明天有空嗎？我們出去走走",
+    # 模擬 LINE/WhatsApp 風格的對話截圖（包含左右位置）
+    sample_conversations = [
+        {
+            "messages": [
+                {"text": "在嗎？", "is_me": False},
+                {"text": "在呀！怎麼了？", "is_me": True},
+                {"text": "想你了 ❤️", "is_me": False},
+            ]
+        },
+        {
+            "messages": [
+                {"text": "今天工作好累...", "is_me": False},
+                {"text": "辛苦了！要不要我幫你按摩？", "is_me": True},
+                {"text": "好呀！謝謝你 💕", "is_me": False},
+            ]
+        },
+        {
+            "messages": [
+                {"text": "晚上有空嗎？", "is_me": False},
+                {"text": "有啊，想做什麼？", "is_me": True},
+                {"text": "一起吃飯吧 😊", "is_me": False},
+                {"text": "好！幾點？", "is_me": True},
+            ]
+        },
+        {
+            "messages": [
+                {"text": "你在做什麼呢？", "is_me": False},
+                {"text": "剛下班，準備回家", "is_me": True},
+                {"text": "路上小心 ❤️", "is_me": False},
+            ]
+        },
     ]
 
-    # 隨機返回一個範例訊息
-    return {"text": random.choice(sample_messages)}
+    # 隨機返回一組對話
+    conversation = random.choice(sample_conversations)
+    return conversation
 
 
 # ------------------------------

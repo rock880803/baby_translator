@@ -90,6 +90,38 @@ class ApiService {
     }
   }
 
+  Future<Map<String, dynamic>> extractConversationFromImage(String imagePath, {List<int>? imageBytes}) async {
+    try {
+      var request = http.MultipartRequest(
+        'POST',
+        Uri.parse('$baseUrl/extract-text'),
+      );
+
+      if (imageBytes != null) {
+        // Web platform: use bytes
+        request.files.add(http.MultipartFile.fromBytes(
+          'image',
+          imageBytes,
+          filename: 'screenshot.jpg',
+        ));
+      } else {
+        // Mobile platform: use path
+        request.files.add(await http.MultipartFile.fromPath('image', imagePath));
+      }
+
+      final response = await request.send();
+      final responseData = await response.stream.bytesToString();
+
+      if (response.statusCode == 200) {
+        return json.decode(responseData) as Map<String, dynamic>;
+      } else {
+        throw Exception('Failed to extract conversation: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Network error: $e');
+    }
+  }
+
   Future<String> uploadScreenshot({
     required String userId,
     required String imagePath,
