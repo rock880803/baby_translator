@@ -8,6 +8,22 @@ class ApiService {
   static const String baseUrl = 'http://localhost:8000/api';
   static const String defaultUserId = 'demo_user_1';
 
+  Future<void> testConnection() async {
+    try {
+      final response = await http.get(
+        Uri.parse('http://localhost:8000/'),
+      ).timeout(const Duration(seconds: 5));
+
+      if (response.statusCode == 200) {
+        return; // 連線成功
+      } else {
+        throw Exception('Server returned ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('無法連線到後端 API');
+    }
+  }
+
   Future<AnalysisResult> analyzeMessage(String content) async {
     try {
       final response = await http.post(

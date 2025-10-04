@@ -240,100 +240,150 @@ class _HomeScreenState extends State<HomeScreen> {
   void _showApiSettingsDialog() {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('API 設定'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // 後端 API 位址
-              Text(
-                '後端 API 位址',
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                ApiService.baseUrl,
-                style: const TextStyle(
-                  fontFamily: 'monospace',
-                  fontSize: 12,
-                ),
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                '提示：\n• Android 模擬器使用 10.0.2.2:8000\n• iOS 模擬器使用 localhost:8000\n• 實體裝置使用電腦的 IP 位址',
-                style: TextStyle(fontSize: 11, color: Colors.grey),
-              ),
-              const SizedBox(height: 24),
-              // Gemini API 金鑰
-              Text(
-                'Gemini AI API 金鑰',
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 8),
-              TextField(
-                controller: _geminiKeyController,
-                decoration: InputDecoration(
-                  hintText: '輸入您的 Gemini API Key',
-                  border: const OutlineInputBorder(),
-                  suffixIcon: _geminiApiKey != null
-                      ? const Icon(Icons.check_circle, color: Colors.green)
-                      : null,
-                ),
-                obscureText: true,
-                maxLines: 1,
-              ),
-              const SizedBox(height: 8),
-              InkWell(
-                onTap: () {
-                  // 開啟 Gemini API 取得頁面
-                },
-                child: const Text(
-                  '如何取得 Gemini API 金鑰？ →',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.blue,
-                    decoration: TextDecoration.underline,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) {
+          bool isTesting = false;
+
+          return AlertDialog(
+            title: const Text('API 設定'),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // 後端 API 位址
+                  Text(
+                    '後端 API 位址',
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-                ),
+                  const SizedBox(height: 8),
+                  Text(
+                    ApiService.baseUrl,
+                    style: const TextStyle(
+                      fontFamily: 'monospace',
+                      fontSize: 12,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    '提示：\n• Android 模擬器使用 10.0.2.2:8000\n• iOS 模擬器使用 localhost:8000\n• 實體裝置使用電腦的 IP 位址',
+                    style: TextStyle(fontSize: 11, color: Colors.grey),
+                  ),
+                  const SizedBox(height: 24),
+                  // Gemini API 金鑰
+                  Text(
+                    'Gemini AI API 金鑰',
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: _geminiKeyController,
+                    decoration: InputDecoration(
+                      hintText: '輸入您的 Gemini API Key',
+                      border: const OutlineInputBorder(),
+                      suffixIcon: _geminiApiKey != null
+                          ? const Icon(Icons.check_circle, color: Colors.green)
+                          : null,
+                    ),
+                    obscureText: true,
+                    maxLines: 1,
+                  ),
+                  const SizedBox(height: 8),
+                  InkWell(
+                    onTap: () {
+                      // 開啟 Gemini API 取得頁面
+                    },
+                    child: const Text(
+                      '如何取得 Gemini API 金鑰？ →',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.blue,
+                        decoration: TextDecoration.underline,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  const Text(
+                    '前往 Google AI Studio (aistudio.google.com) 免費取得',
+                    style: TextStyle(fontSize: 11, color: Colors.grey),
+                  ),
+                ],
               ),
-              const SizedBox(height: 4),
-              const Text(
-                '前往 Google AI Studio (aistudio.google.com) 免費取得',
-                style: TextStyle(fontSize: 11, color: Colors.grey),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('取消'),
+              ),
+              FilledButton(
+                onPressed: isTesting ? null : () async {
+                  final key = _geminiKeyController.text.trim();
+                  if (key.isEmpty) {
+                    Navigator.pop(context);
+                    return;
+                  }
+
+                  // 顯示測試中狀態
+                  setDialogState(() => isTesting = true);
+
+                  try {
+                    // 測試 API 連線（先儲存金鑰）
+                    await _saveGeminiApiKey(key);
+
+                    // 測試後端連線
+                    final apiService = context.read<ApiService>();
+                    await apiService.testConnection();
+
+                    if (context.mounted) {
+                      Navigator.pop(context);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Row(
+                            children: [
+                              Icon(Icons.check_circle, color: Colors.white),
+                              SizedBox(width: 8),
+                              Expanded(child: Text('✅ API 串接成功！Gemini 金鑰已儲存')),
+                            ],
+                          ),
+                          backgroundColor: Colors.green,
+                          duration: Duration(seconds: 3),
+                        ),
+                      );
+                    }
+                  } catch (e) {
+                    setDialogState(() => isTesting = false);
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Row(
+                            children: [
+                              const Icon(Icons.error_outline, color: Colors.white),
+                              const SizedBox(width: 8),
+                              Expanded(child: Text('❌ 連線失敗: $e')),
+                            ],
+                          ),
+                          backgroundColor: Colors.red,
+                          duration: const Duration(seconds: 4),
+                        ),
+                      );
+                    }
+                  }
+                },
+                child: isTesting
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Text('測試並儲存'),
               ),
             ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('取消'),
-          ),
-          FilledButton(
-            onPressed: () {
-              final key = _geminiKeyController.text.trim();
-              if (key.isNotEmpty) {
-                _saveGeminiApiKey(key);
-                Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Gemini API 金鑰已儲存'),
-                    backgroundColor: Colors.green,
-                  ),
-                );
-              } else {
-                Navigator.pop(context);
-              }
-            },
-            child: const Text('儲存'),
-          ),
-        ],
+          );
+        },
       ),
     );
   }
