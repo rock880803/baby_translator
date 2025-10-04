@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/mbti_type.dart';
 import '../services/api_service.dart';
 import 'mbti_selection_screen.dart';
@@ -23,17 +24,42 @@ class ChatMessage {
 
 class _HomeScreenState extends State<HomeScreen> {
   final TextEditingController _messageController = TextEditingController();
+  final TextEditingController _geminiKeyController = TextEditingController();
   final ImagePicker _picker = ImagePicker();
   final List<ChatMessage> _chatMessages = []; // 聊天記錄
   MBTIType? _myMBTI;      // 自己的 MBTI
   MBTIType? _partnerMBTI; // 對方的 MBTI
   bool _isLoading = false;
   String? _extractedText; // 截圖擷取的文字
+  String? _geminiApiKey;  // Gemini API 金鑰
+
+  @override
+  void initState() {
+    super.initState();
+    _loadGeminiApiKey();
+  }
 
   @override
   void dispose() {
     _messageController.dispose();
+    _geminiKeyController.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadGeminiApiKey() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _geminiApiKey = prefs.getString('gemini_api_key');
+      _geminiKeyController.text = _geminiApiKey ?? '';
+    });
+  }
+
+  Future<void> _saveGeminiApiKey(String key) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('gemini_api_key', key);
+    setState(() {
+      _geminiApiKey = key;
+    });
   }
 
   Future<void> _pickImage(ImageSource source) async {
@@ -212,38 +238,100 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _showApiSettingsDialog() {
-    final apiService = context.read<ApiService>();
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('API 設定'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              '後端 API 位址',
-              style: Theme.of(context).textTheme.titleSmall,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              ApiService.baseUrl,
-              style: const TextStyle(
-                fontFamily: 'monospace',
-                fontSize: 12,
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // 後端 API 位址
+              Text(
+                '後端 API 位址',
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
               ),
-            ),
-            const SizedBox(height: 16),
-            const Text(
-              '提示：\n• Android 模擬器使用 10.0.2.2:8000\n• iOS 模擬器使用 localhost:8000\n• 實體裝置使用電腦的 IP 位址',
-              style: TextStyle(fontSize: 12, color: Colors.grey),
-            ),
-          ],
+              const SizedBox(height: 8),
+              Text(
+                ApiService.baseUrl,
+                style: const TextStyle(
+                  fontFamily: 'monospace',
+                  fontSize: 12,
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                '提示：\n• Android 模擬器使用 10.0.2.2:8000\n• iOS 模擬器使用 localhost:8000\n• 實體裝置使用電腦的 IP 位址',
+                style: TextStyle(fontSize: 11, color: Colors.grey),
+              ),
+              const SizedBox(height: 24),
+              // Gemini API 金鑰
+              Text(
+                'Gemini AI API 金鑰',
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: _geminiKeyController,
+                decoration: InputDecoration(
+                  hintText: '輸入您的 Gemini API Key',
+                  border: const OutlineInputBorder(),
+                  suffixIcon: _geminiApiKey != null
+                      ? const Icon(Icons.check_circle, color: Colors.green)
+                      : null,
+                ),
+                obscureText: true,
+                maxLines: 1,
+              ),
+              const SizedBox(height: 8),
+              InkWell(
+                onTap: () {
+                  // 開啟 Gemini API 取得頁面
+                },
+                child: const Text(
+                  '如何取得 Gemini API 金鑰？ →',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.blue,
+                    decoration: TextDecoration.underline,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 4),
+              const Text(
+                '前往 Google AI Studio (aistudio.google.com) 免費取得',
+                style: TextStyle(fontSize: 11, color: Colors.grey),
+              ),
+            ],
+          ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('關閉'),
+            child: const Text('取消'),
+          ),
+          FilledButton(
+            onPressed: () {
+              final key = _geminiKeyController.text.trim();
+              if (key.isNotEmpty) {
+                _saveGeminiApiKey(key);
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Gemini API 金鑰已儲存'),
+                    backgroundColor: Colors.green,
+                  ),
+                );
+              } else {
+                Navigator.pop(context);
+              }
+            },
+            child: const Text('儲存'),
           ),
         ],
       ),
